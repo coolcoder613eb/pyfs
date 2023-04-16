@@ -1,7 +1,7 @@
 import os
 from struct import pack, unpack
 import argparse
-from gooey import Gooey
+#from gooey import Gooey
 
 def get_bit(value, bit_index):
     return (value >> bit_index) & 1
@@ -19,13 +19,14 @@ def toggle_bit(value, bit_index):
     return value ^ (1 << bit_index)
 
 
-def get_str(inbytes, index=0):
-    byte = inbytes[index]
+def get_str(file, index=0):
+    byte = file.read(1)
+    #inbytes[index]
     data = b""
-    while byte != 0:
+    while byte != b'\0':
         index += 1
-        data += bytes([byte])
-        byte = inbytes[index]
+        data += byte
+        byte = file.read(1)
 
     return data.decode("utf-8")
 
@@ -43,7 +44,7 @@ def writeimg(filedir="testfiles", imgfile="pyfs.img"):
                 print(f'Adding {x}...')
                 read = f.read()
                 files.append([bytes(x, "utf-8") + b"\0", pack(fmt, len(read)), read])
-        except PermissionError as e:
+        except OSError as e:
             #print('PermissionError:',e)
             pass
     #print(files)
@@ -66,27 +67,26 @@ def readimg(filedir="testread", imgfile="pyfs.img"):
     files = []
     with open(imgfile, "rb") as f:
         print(f'Reading from {imgfile}...')
-        read = f.read()
-    #print(read)
-    index = 0
-    while True:
-        try:
-            
-            filename = get_str(read[index:])
-            print(f'Reading {filename}...')
-            # assert filename != ''
-            index += len(filename) + 1
-            length = unpack(fmt, read[index : index + 4])[0]
-            index += 4
-            data = read[index : index + length]
-            index += length
-            files.append([filename, length, data])
-            #print('Done')
-            # raise Exception()
+        #read = f.read()
+        #print(read)
+        index = 0
+        while True:
+            try:
+                filename = get_str(f)#read[index:])
+                assert filename != ''
+                print(f'Reading {filename}...')
+                index += len(filename) + 1
+                length = unpack(fmt, f.read(4))[0]#read[index : index + 4])[0]
+                index += 4
+                data = f.read(length)#read[index : index + length]
+                index += length
+                files.append([filename, length, data])
+                #print('Done')
+                        # raise Exception()
 
-        except Exception as e:
-            # print(e)
-            break
+            except Exception as e:
+                print(e)
+                break
     #print(files)
     os.chdir(filedir)
     print(f'Writing files to {filedir}...')
@@ -96,7 +96,7 @@ def readimg(filedir="testread", imgfile="pyfs.img"):
             f.write(x[2])
     os.chdir(cwd)
 
-@Gooey
+#@Gooey
 def main():
     parser = argparse.ArgumentParser(description="Read from and write to a pyfs image file")
     subparsers = parser.add_subparsers()
@@ -113,6 +113,10 @@ def main():
     args = parser.parse_args()
 
     #print(not not args.read,not not args.write)
-    args.func(args.dir,args.img)
+    try:
+        args.func(args.dir,args.img)
+    except AttributeError:
+        parser.print_help()
+
 
 main()
