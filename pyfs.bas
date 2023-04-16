@@ -1,24 +1,24 @@
 #include "fbgfx.bi"  ' Include FreeBASIC graphics library
-#include "fbstring.bi"  ' Include FreeBASIC string library
+#include "string.bi"  ' Include FreeBASIC string library
 
 Type FileData
     filename As String
     length As Integer
-    data() As Byte
+    data(1) As Byte
 End Type
 
 Dim As String fmt = "=I"
 
-Function get_str(inbytes() As Byte, Optional index As Integer = 0) As String
-    Dim As Byte byte = inbytes(index)
-    Dim As String data = ""
-    While byte <> 0
+Function get_str(inbytes() As Byte, index As Integer = 0) As String
+    Dim tbyte As Byte  = inbytes(index)
+    Dim tdata As String = ""
+    While tbyte <> 0
         index += 1
-        data += Chr(byte)
-        byte = inbytes(index)
+        tdata += Chr(tbyte)
+        tbyte = inbytes(index)
     Wend
 
-    Return data
+    Return tdata
 End Function
 
 Sub writeimg(filedir As String = "testfiles", imgfile As String = "pyfs.img")
@@ -27,11 +27,12 @@ Sub writeimg(filedir As String = "testfiles", imgfile As String = "pyfs.img")
     ChDir(filedir)
     Dim As String filename
     Dim As ULongInt length
-    Dim As String read
+    Dim As String tread
     Dim As FileData file
     Dim As Integer f
     Dim As Byte b
-    For Each filename In Dir
+
+    For f = 1 To Len(Dir)
         On Error Resume Next
         f = FreeFile
         Open filename For Binary As #f
