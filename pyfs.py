@@ -1,11 +1,12 @@
 import os
 from struct import pack, unpack
 import argparse
-from io import SEEK_CUR
+
+SEEK_CUR = 1
 
 Gooey = lambda x: x
 
-from gooey import Gooey
+#from gooey import Gooey
 
 
 def get_bit(value, bit_index):
@@ -35,6 +36,19 @@ def get_str(file, index=0):
         byte = file.read(1)
 
     return data.decode("utf-8")
+
+
+def isfinished(file):
+    try:
+        print(file.tell())
+        file.read(20)
+        print(file.tell())
+        file.seek(-1, SEEK_CUR)
+        print(file.tell())
+        return False
+    except Exception as e:
+        print(e)
+        return True
 
 
 fmt = "=I"
@@ -91,7 +105,7 @@ def readimg(filedir="testread", imgfile="pyfs.img"):
                 # raise Exception()
 
             except Exception as e:
-                #print(e)
+                # print(e)
                 break
     # print(files)
     os.chdir(filedir)
@@ -124,6 +138,7 @@ def lsimg(imgfile="pyfs.img"):
                 break
     print("\n".join(files))
 
+
 def getimg(file="file.txt", imgfile="pyfs.img"):
     cwd = os.getcwd()
     files = []
@@ -134,24 +149,68 @@ def getimg(file="file.txt", imgfile="pyfs.img"):
                 filename = get_str(f)
                 assert filename != ""
                 length = unpack(fmt, f.read(4))[0]
-                if filename==file:
+                if filename == file:
                     print(f"Reading {filename}...")
-                    data = f.read(length)  
+                    data = f.read(length)
                     files.append([filename, length, data])
                 else:
                     f.seek(length, SEEK_CUR)
 
             except Exception as e:
-                #print(e)
+                # print(e)
                 break
-    #print(files)
+    # print(files)
     if not files:
-        print(f'Could not find {file}!') 
+        print(f"Could not find {file}!")
     else:
         for x in files:
             with open(x[0], "wb") as f:
-                print(f'Writing {x[0]}...')
+                print(f"Writing {x[0]}...")
                 f.write(x[2])
+
+
+def putimg(file="file.txt", imgfile="pyfs.img"):
+    # cwd = os.getcwd()
+    files = []
+    # os.chdir(filedir)
+
+    try:
+        with open(file, "rb") as f:
+            print(f"Adding {x}...")
+            read = f.read()
+            files.append([bytes(x, "utf-8") + b"\0", pack(fmt, len(read)), read])
+    except Exception as e:
+        # print(e)
+
+        pass
+    # print(files)
+
+    with open(imgfile, "rb") as f:
+        # print(f"Reading from {imgfile}...")
+        while True:
+            try:
+                filename = get_str(f)
+                assert filename != ""
+                length = unpack(fmt, f.read(4))[0]
+                f.seek(length, SEEK_CUR)
+
+            except Exception as e:
+                # print(e)
+                if isfinished(f):
+                    f1 = open(imgfile, "ab")
+                    print('ab')
+                else:
+                    f1 = open(imgfile, "r+b")
+                    f1.seek(f.tell())
+                    print('r+b')
+
+                binfiles = []
+                for x in files:
+                    binfiles.append(b"".join(x))
+                data = b"".join(binfiles)
+                print(f"Writing to {imgfile}...")
+                f1.write(data)
+                break
 
 
 @Gooey
@@ -179,6 +238,11 @@ def main():
     get.add_argument("file", default="file.txt", help="file to get")
     get.set_defaults(func=getimg)
 
+    put = subparsers.add_parser("put", help="store a file onto an image")
+    put.add_argument("img", default="pyfs.img", help="image file to write to")
+    put.add_argument("file", default="file.txt", help="file to store")
+    put.set_defaults(func=putimg)
+
     args = parser.parse_args()
     # print(args)
 
@@ -187,8 +251,8 @@ def main():
         args.func(args.dir, args.img)
     elif args.name == "ls":
         args.func(args.img)
-    elif args.name == "get":
-        args.func(args.file,args.img)
+    elif args.name == "get" or args.name == "put":
+        args.func(args.file, args.img)
     else:
         parser.print_help()
 
