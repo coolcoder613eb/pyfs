@@ -6,7 +6,7 @@ SEEK_CUR = 1
 
 Gooey = lambda x: x
 
-#from gooey import Gooey
+from gooey import Gooey
 
 
 def get_bit(value, bit_index):
@@ -31,7 +31,7 @@ def get_str(file, index=0):
     # inbytes[index]
     data = b""
     while byte != b"\0":
-        index += 1
+        #index += 1
         data += byte
         byte = file.read(1)
 
@@ -39,16 +39,18 @@ def get_str(file, index=0):
 
 
 def isfinished(file):
-    try:
-        print(file.tell())
-        file.read(20)
-        print(file.tell())
-        file.seek(-1, SEEK_CUR)
-        print(file.tell())
-        return False
-    except Exception as e:
-        print(e)
-        return True
+    #try:
+    #    #print(file.tell())
+    rtn = not len(file.read(1))
+    #print(rtn)
+    return rtn
+    #    print(file.tell())
+    #    file.seek(-1, SEEK_CUR)
+    #    print(file.tell())
+    #    return False
+    #except Exception as e:
+    #    print(e)
+    #    return True
 
 
 fmt = "=I"
@@ -176,11 +178,11 @@ def putimg(file="file.txt", imgfile="pyfs.img"):
 
     try:
         with open(file, "rb") as f:
-            print(f"Adding {x}...")
+            print(f"Adding {file}...")
             read = f.read()
-            files.append([bytes(x, "utf-8") + b"\0", pack(fmt, len(read)), read])
+            files.append([bytes(file, "utf-8") + b"\0", pack(fmt, len(read)), read])
     except Exception as e:
-        # print(e)
+        #print(e)
 
         pass
     # print(files)
@@ -198,16 +200,17 @@ def putimg(file="file.txt", imgfile="pyfs.img"):
                 # print(e)
                 if isfinished(f):
                     f1 = open(imgfile, "ab")
-                    print('ab')
+                    #print('ab')
                 else:
                     f1 = open(imgfile, "r+b")
                     f1.seek(f.tell())
-                    print('r+b')
+                    #print('r+b')
 
                 binfiles = []
                 for x in files:
                     binfiles.append(b"".join(x))
                 data = b"".join(binfiles)
+                #print(files,binfiles,data)
                 print(f"Writing to {imgfile}...")
                 f1.write(data)
                 break
